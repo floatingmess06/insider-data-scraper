@@ -1,0 +1,35 @@
+[
+  {
+    "Notification date": "2023-09-25",
+    "Transaction date": "2023-09-22",
+    "B/S": "B",
+    "Transaction type": "Purchase",
+    "Insider": "Blume, Oliver",
+    "Position": " Management Board Member",
+    "Number of shares": "2,250",
+    "Price": "112.80",
+    "Value": "EUR 253,805"
+  },
+  {
+    "Notification date": "2023-06-12",
+    "Transaction date": "2023-06-09",
+    "B/S": "B",
+    "Transaction type": "Purchase",
+    "Insider": "Blume, Oliver",
+    "Position": " Management Board Member",
+    "Number of shares": "4,000",
+    "Price": "126.40",
+    "Value": "EUR 505,600"
+  },
+  {
+    "Notification date": "2020-03-11",
+    "Transaction date": "2020-03-06",
+    "B/S": "B",
+    "Transaction type": "Purchase",
+    "Insider": "Werner, Hiltrud Dorothea",
+    "Position": " Management Board Member",
+    "Number of shares": "1,000",
+    "Price": "146.38",
+    "Value": "EUR 146,380"
+  }
+]

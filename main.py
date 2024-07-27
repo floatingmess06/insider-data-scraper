@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -54,7 +55,52 @@ def submit_search_form(url, company_name, max_retries=3):
         driver.quit()
 
 
-def scrape_table(response):
+def scrape_table_for_json(response):
+    if not response:
+        return None
+
+    soup = BeautifulSoup(response, "html.parser")
+
+    # Check for error messages
+    error_msg = soup.select_one("div.alert.alert-danger")
+    if error_msg:
+        print(f"Error message found: {error_msg.text.strip()}")
+        return None
+
+    table = soup.select_one("div.table-responsive-md table")
+    if table:
+        headers = [th.text.strip() for th in table.select("thead th")]
+        rows = []
+        for row in table.select("tbody tr"):
+            cells = [td.text.strip() for td in row.find_all(["td", "th"])]
+            row_dict = {}
+            for header, cell in zip(headers, cells):
+                if header == "B/S\nTransaction type":
+                    b_s, transaction_type = cell.split("\n", 1)
+                    row_dict["B/S"] = b_s
+                    row_dict["Transaction type"] = transaction_type
+                elif header == "Insider and/or position":
+                    insider_info = cell.split("\n")
+                    row_dict["Insider"] = insider_info[0]
+                    row_dict["Position"] = " ".join(insider_info[1:])
+                elif header == "Nb. shares\nPrice\nValue":
+                    nb_shares, price, value = cell.split("\n\n")
+                    row_dict["Number of shares"] = nb_shares.split("\n")[0]
+                    row_dict["Price"] = price
+                    row_dict["Value"] = value
+                elif header == "Details":
+                    if cell:  # Only include Details if it's not empty
+                        row_dict[header] = cell
+                else:
+                    row_dict[header] = cell
+            rows.append(row_dict)
+        return rows
+    else:
+        print("Table not found")
+        return None
+
+
+def scrape_table_for_csv(response):
     if not response:
         return None, None
 
@@ -86,6 +132,11 @@ def save_to_csv(filename, headers, rows):
         writer.writerows(rows)
 
 
+def save_to_json(filename, data):
+    with open(filename, "w", encoding="utf-8") as jsonfile:
+        json.dump(data, jsonfile, indent=2, ensure_ascii=False)
+
+
 if __name__ == "__main__":
     url = "https://www.insiderscreener.com/en/"
     company_name = input("Enter the company name: ")
@@ -96,14 +147,30 @@ if __name__ == "__main__":
     if response:
         print("Response page received. Length:", len(response))
         print("Scraping data for selected company...")
-        headers, rows = scrape_table(response)
 
-        if headers and rows:
+        # uncomment if want to save data in csv
+        # headers, rows = scrape_table(response)
+        # if headers and rows:
+        #     output_dir = os.path.join(output_dir, "csv")
+        #     filename = os.path.join(
+        #         output_dir,
+        #         f"{company_name.replace(' ', '_').lower()}_insider_data.csv",
+        #     )
+
+        #     save_to_csv(filename, headers, rows)
+        #     print(f"Data saved to {filename}")
+        # else:
+        #     print("No data found or unable to scrape the table.")
+
+        data = scrape_table_for_json(response)
+
+        if data:
+            output_dir = os.path.join(output_dir, "json")
             filename = os.path.join(
                 output_dir,
-                f"{company_name.replace(' ', '_').lower()}_insider_data.csv",
+                f"{company_name.replace(' ', '_').lower()}_insider_data.json",
             )
-            save_to_csv(filename, headers, rows)
+            save_to_json(filename, data)
             print(f"Data saved to {filename}")
         else:
             print("No data found or unable to scrape the table.")
