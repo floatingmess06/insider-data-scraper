@@ -1,43 +1,72 @@
-import csv
-from bs4 import BeautifulSoup
-import requests
-import time
 import os
+import csv
+import time
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.service import Service
+from webdriver_manager.firefox import GeckoDriverManager
+from bs4 import BeautifulSoup
 
 
-class Countries:
-    """CONTAINS COUNTRIES INFOS"""
+def submit_search_form(url, company_name, max_retries=3):
+    service = Service(GeckoDriverManager().install())
+    driver = webdriver.Firefox(service=service)
+    try:
+        for attempt in range(max_retries):
+            try:
+                driver.get(url)
+                search_input = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.ID, "navbar_search_input"))
+                )
+                search_input.clear()
+                search_input.send_keys(company_name)
 
-    AU = {"NAME": "AUSTRALIA", "URL": "https://www.insiderscreener.com/en/explore/au"}
-    GM = {"NAME": "GERMANY", "URL": "https://www.insiderscreener.com/en/explore/de"}
-    US = {"NAME": "USA", "URL": "https://www.insiderscreener.com/en/explore/us"}
-    CA = {"NAME": "CANADA", "URL": "https://www.insiderscreener.com/en/explore/ca"}
-    FR = {"NAME": "FRANCE", "URL": "https://www.insiderscreener.com/en/explore/fr"}
-    SP = {"NAME": "SPAIN", "URL": "https://www.insiderscreener.com/en/explore/es"}
-    IT = {"NAME": "ITALY", "URL": "https://www.insiderscreener.com/en/explore/it"}
-    SZ = {"NAME": "SWITZERLAND", "URL": "https://www.insiderscreener.com/en/explore/ch"}
-    BG = {"NAME": "BELGIUM", "URL": "https://www.insiderscreener.com/en/explore/be"}
-    NH = {"NAME": "NETHERLANDS", "URL": "https://www.insiderscreener.com/en/explore/nl"}
-    SW = {"NAME": "SWEDEN", "URL": "https://www.insiderscreener.com/en/explore/se"}
-    GR = {"NAME": "GREECE", "URL": "https://www.insiderscreener.com/en/explore/gr"}
-    IN = {"NAME": "INDIA", "URL": "https://www.insiderscreener.com/en/explore/in"}
+                # Waiting for the dropdown to appear
+                dropdown = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "ui-menu"))
+                )
+
+                # Waiting for the first dropdown item to be clickable
+                first_item = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable(
+                        (By.CSS_SELECTOR, ".ui-menu .ui-menu-item")
+                    )
+                )
+
+                # Click it
+                first_item.click()
+
+                # Wait for page load after click
+                WebDriverWait(driver, 10).until(EC.url_changes(url))
+
+                return driver.page_source
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed: {str(e)}")
+                if attempt < max_retries - 1:
+                    print("Retrying...")
+                    time.sleep(2)
+                else:
+                    print("Max retries reached. Unable to fetch data.")
+                    return None
+    finally:
+        driver.quit()
 
 
-def scrape_table(url: str):
-    """Function to extract neccessary table's headers and rows
+def scrape_table(response):
+    if not response:
+        return None, None
 
-    Args:
-        url (str): link of the page
+    soup = BeautifulSoup(response, "html.parser")
 
-    Returns:
-        tuple(list): containing headers at 0th ind and rows at 1st
-    """
-    response = requests.get(url)
-    html_content = response.text
+    # Check for error messages
+    error_msg = soup.select_one("div.alert.alert-danger")
+    if error_msg:
+        print(f"Error message found: {error_msg.text.strip()}")
+        return None, None
 
-    soup = BeautifulSoup(html_content, "html.parser")
     table = soup.select_one("div.table-responsive-md table")
-
     if table:
         headers = [th.text.strip() for th in table.select("thead th")]
         rows = []
@@ -46,7 +75,7 @@ def scrape_table(url: str):
             rows.append(cells)
         return headers, rows
     else:
-        print(f"Table not found for URL: {url}")
+        print("Table not found")
         return None, None
 
 
@@ -57,33 +86,26 @@ def save_to_csv(filename, headers, rows):
         writer.writerows(rows)
 
 
-def main():
+if __name__ == "__main__":
+    url = "https://www.insiderscreener.com/en/"
+    company_name = input("Enter the company name: ")
     output_dir = "insider_data"
     os.makedirs(output_dir, exist_ok=True)
 
-    for country_code, country_info in vars(Countries).items():
-        if (
-            isinstance(country_info, dict)
-            and "NAME" in country_info
-            and "URL" in country_info
-        ):
-            print(f"Scraping data for {country_info['NAME']}...")
-            headers, rows = scrape_table(country_info["URL"])
+    response = submit_search_form(url, company_name)
+    if response:
+        print("Response page received. Length:", len(response))
+        print("Scraping data for selected company...")
+        headers, rows = scrape_table(response)
 
-            if headers and rows:
-                filename = os.path.join(
-                    output_dir, f"{country_info['NAME'].lower()}_insider_data.csv"
-                )
-                save_to_csv(filename, headers, rows)
-                print(f"Data saved to {filename}")
-            else:
-                print(f"No data found for {country_info['NAME']}")
-
-            # to avoid server restrictions
-            time.sleep(2)
-
-    print("Data extraction complete.")
-
-
-if __name__ == "__main__":
-    main()
+        if headers and rows:
+            filename = os.path.join(
+                output_dir,
+                f"{company_name.replace(' ', '_').lower()}_insider_data.csv",
+            )
+            save_to_csv(filename, headers, rows)
+            print(f"Data saved to {filename}")
+        else:
+            print("No data found or unable to scrape the table.")
+    else:
+        print("Failed to retrieve the response page.")
