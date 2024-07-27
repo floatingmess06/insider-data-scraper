@@ -1,11 +1,11 @@
 # Insider Data Scraper
 
-This tool scrapes insider trading data from insiderscreener.com for a company and saves the data into separate CSV files.
+This tool scrapes insider trading data from insiderscreener.com for a company and saves the data into separate JSON/CSV files.
 
 ## Features
 
 - Scrapes insider trading data for demanded company
-- Saves data in a separate CSV file
+- Saves data in a separate JSON/CSV file
 - Handles network requests responsibly with delays between requests
 - Uses custom User-Agent to mimic browser behavior
 
@@ -42,10 +42,10 @@ pip install -r requirements.txt
 python main.py
 ```
 
-You will be prompted to enter the company name. The script will then perform the web scraping and save the data to a CSV file.
+You will be prompted to enter the company name. The script will then perform the web scraping and save the data to a JSON/CSV file.
 
 2. The script will create an "insider_data" directory in the same location as the script.
-3. CSV file for each company will be saved in the "insider_data" directory.
+3. JSON/CSV file for each company will be saved in the "insider_data" directory.
 
 ## Additional Considerations
 
