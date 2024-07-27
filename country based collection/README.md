@@ -1,11 +1,11 @@
 # Insider Data Scraper
 
-This tool scrapes insider trading data from insiderscreener.com for a company and saves the data into separate CSV files.
+This tool scrapes insider trading data from insiderscreener.com for multiple countries and saves the data into separate CSV files.
 
 ## Features
 
-- Scrapes insider trading data for demanded company
-- Saves data in a separate CSV file
+- Scrapes insider trading data for 13 countries
+- Saves data for each country in a separate CSV file
 - Handles network requests responsibly with delays between requests
 - Uses custom User-Agent to mimic browser behavior
 
@@ -42,16 +42,24 @@ pip install -r requirements.txt
 python main.py
 ```
 
-You will be prompted to enter the company name. The script will then perform the web scraping and save the data to a CSV file.
-
 2. The script will create an "insider_data" directory in the same location as the script.
-3. CSV file for each company will be saved in the "insider_data" directory.
+3. CSV files for each company will be saved in the "insider_data" directory.
 
-## Additional Considerations
+## Supported Countries
 
-- Firefox Installation: Ensure you have Firefox installed on your system since the script uses Firefox for web scraping.
-- Adjust Timeouts: If you experience timeouts or other timing issues, consider adjusting the WebDriverWait durations in the script.
-- Error Handling: The script includes basic error handling. Depending on the website's behavior, you might need to enhance this further.
+- Australia
+- Germany
+- USA
+- Canada
+- France
+- Spain
+- Italy
+- Switzerland
+- Belgium
+- Netherlands
+- Sweden
+- Greece
+- India
 
 ## Notes
 
@@ -65,6 +73,6 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome. Feel free to check [issues page](https://github.com/floatingmess06/insider-data-scraper/issues) if you want to contribute.
+Contributions, issues, and feature requests are welcome. Feel free to check [issues page](https://github.com/yourusername/insider-data-scraper/issues) if you want to contribute.
 
 
